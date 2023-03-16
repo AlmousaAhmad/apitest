@@ -1,0 +1,6 @@
+__pycache__
+env
+test.json
+cat_com.json
+categorys_encoded.pkl
+commoditys_encoded.pkl
