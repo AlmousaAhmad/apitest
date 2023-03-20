@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 import pickle
+import pandas as pd
 # import pandas as pd
 
 app = FastAPI()
@@ -19,6 +20,10 @@ class ScroingItem(BaseModel):
 
 with open('xgboost model.pkl', 'rb') as file:
     xgboost_model = pickle.load(file)
+with open('market model.pkl', 'rb') as file:
+    market_model = pickle.load(file)
+with open('market_encoded.pkl', 'rb') as lst:
+    markets = pickle.load(lst)
 
 # @app.post('/')
 # async def scroing_endpoint(item:ScroingItem):
@@ -41,6 +46,7 @@ async def scroing_endpoint(category      :  int,
     world         :  int,  
     jor_new_cases :  float,
     jor_new_deaths:  float):
+
     input_list = [[category,
                    commodity,
                    month,
@@ -51,6 +57,20 @@ async def scroing_endpoint(category      :  int,
                    world,
                    jor_new_cases,
                    jor_new_deaths]]
+    
+    
     predict_price = xgboost_model.predict(input_list)
-    return {"predict_price": float(predict_price)}
+    markets_predict_price = {}
+    for mark in range(len(markets)):
+        input_list = [[ commodity,
+                        month,
+                        year,
+                        float(predict_price),
+                        mark]]
+        df = pd.DataFrame(input_list, columns = ['commodity','month','year','price_x','market'])
+        market_price_pred = market_model.predict(df)
+        markets_predict_price[markets[mark]] = float(market_price_pred)
+    markets_predict_price['Avg'] = float(predict_price)
+    # return {"predict_price": float(predict_price)}
+    return markets_predict_price
     # return 1
